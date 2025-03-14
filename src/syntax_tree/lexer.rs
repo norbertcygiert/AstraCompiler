@@ -1,21 +1,25 @@
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum TokenType {     
-    Number(i64),     
-    Plus,     
-    Minus,     
-    Star,     
-    Slash,     
-    LeftPar,     
-    RightPar, 
+    NUMBER(i64),     
+    PLUS,     
+    MINUS,     
+    STAR,     
+    SLASH,     
+    LEFTPAR,     
+    RIGHTPAR, 
     EOF,
-    Invalid,
+    INVALID,
+    WHITESPACE
 } 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct TokenSpan {     
     start: usize,     
     end: usize,     
     content: String, 
 } 
+#[allow(dead_code)]
 impl TokenSpan {     
     
     pub fn new(start: usize, end: usize, content: String)-> Self {         
@@ -25,6 +29,7 @@ impl TokenSpan {
     pub fn len(&self) -> usize{ self.end - self.start }
 }
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Token { 
     kind: TokenType, 
     span: TokenSpan,
@@ -39,7 +44,7 @@ pub struct Lexer<'a> {
     input: &'a str,
     current_pos: usize,
 }
-
+#[allow(dead_code)]
 impl <'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self { input, current_pos: 0 }
@@ -59,37 +64,66 @@ impl <'a> Lexer<'a> {
             ));
         }
         
-        let start: usize = self.current_pos;
-        let c: char = self.current_char();
-        let mut kind = TokenType::Invalid;
-        if Self::is_start_of_number(&c){
-            let number: i64 = self.consume_num();
-            kind = TokenType::Number(number);
-        };
-        let end: usize = self.current_pos;
-        let literal: String = self.input[start..end].to_string();
-        let local_span: TokenSpan = TokenSpan::new(start, end, literal);
-        Some(Token::new(kind, local_span))
+        let c  = self.current_char();
+
+        return c.map(|c:char|{
+            let start: usize = self.current_pos;
+            let mut kind = TokenType::INVALID;
+            if Self::is_start_of_number(&c){
+                let number: i64 = self.consume_num();
+                kind = TokenType::NUMBER(number);
+            }
+            else if Self::is_whitespace(&c) {
+                self.consume_token();
+                kind = TokenType::WHITESPACE;
+            }
+            else {
+                kind = self.consume_symbol();
+            }
+            let end: usize = self.current_pos;
+            let literal: String = self.input[start..end].to_string();
+            let local_span: TokenSpan = TokenSpan::new(start, end, literal);
+            Token::new(kind, local_span)
+        })
     }
 
-    fn current_char(&self) -> char {
-        self.input.chars().nth(self.current_pos).unwrap()
+    fn consume_symbol(&mut self) -> TokenType{ //copilot generated :)
+        let c = self.consume_token().unwrap();
+        match c {
+            '+' =>  TokenType::PLUS,
+            '-' => TokenType::MINUS,
+            '*' => TokenType::STAR,
+            '/' => TokenType::SLASH,
+            '(' => TokenType::LEFTPAR,
+            ')' => TokenType::RIGHTPAR,
+            _ => TokenType::INVALID,
+        }
     }
+    fn current_char(&self) -> Option<char> {
+        self.input.chars().nth(self.current_pos)
+    }
+
+    /*
+    fn peek_char(&self) -> Option<char>{
+        self.input.chars().nth(self.current_pos+1)
+    }
+    */
 
     fn consume_token(&mut self) -> Option<char>{
-        let c: char = self.current_char();
-        self.current_pos += 1;
         if self.current_pos >= self.input.len(){
             return None;
         }
-        Some(c)
+        let c = self.current_char();
+        self.current_pos += 1;
+        c
     }
 
     fn consume_num(&mut self)-> i64{
         let mut number: i64 = 0;
-        while let Some(c) = self.consume_token(){
+        while let Some(c) = self.current_char(){
             //While there are more digits to be read, divide by 10 and append
             if c.is_digit(10){
+                self.consume_token().unwrap();
                 number = number * 10 + c.to_digit(10).unwrap() as i64;
             }
             else {
@@ -99,6 +133,9 @@ impl <'a> Lexer<'a> {
         number
     }
 
+    fn is_whitespace(c: &char) -> bool {
+        c.is_whitespace()
+    }
     fn is_start_of_number(c: &char) -> bool {
         c.is_digit(10)
     }
