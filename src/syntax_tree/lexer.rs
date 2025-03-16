@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(dead_code)]
 pub enum TokenType {     
     NUMBER(i64),     
@@ -12,7 +12,7 @@ pub enum TokenType {
     INVALID,
     WHITESPACE
 } 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(dead_code)]
 pub struct TokenSpan {     
     pub(crate) start: usize,     
@@ -28,7 +28,7 @@ impl TokenSpan {
     
     pub fn len(&self) -> usize{ self.end - self.start }
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(dead_code)]
 pub struct Token { 
     pub(crate) kind: TokenType, 

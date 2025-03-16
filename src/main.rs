@@ -10,13 +10,76 @@ fn test_lexer(i: &str) {
     }
     //println!("{:?}", tokens);
     println!();
-    let mut parser = Parser::create_from_tokens(tokens);
+    let mut parser = Parser::new(tokens);
     while let Some(statement) = parser.next_statement() {
-        println!("{:?}", statement);
+        println!("{:#?}",statement); //Pretty print
     }
 
 }
 
 fn main() {
-    test_lexer("7454");
+    test_lexer("7+4*3");
 }
+/*
+OUTPUT FOR test_lexer("7+4*3"):
+
+StStatement {
+    kind: EXPRESSION(
+        StExpression {
+            kind: BINARY(
+                StBinaryExpression {
+                    left: StExpression {
+                        kind: NUMBER(
+                            StNumeralExpression {
+                                value: 7,
+                            },
+                        ),
+                    },
+                    operator: StBinaryOperator {
+                        kind: ADD,
+                        token: Token {
+                            kind: PLUS,
+                            span: TokenSpan {
+                                start: 1,
+                                end: 2,
+                                content: "+",
+                            },
+                        },
+                    },
+                    right: StExpression {
+                        kind: BINARY(
+                            StBinaryExpression {
+                                left: StExpression {
+                                    kind: NUMBER(
+                                        StNumeralExpression {
+                                            value: 4,
+                                        },
+                                    ),
+                                },
+                                operator: StBinaryOperator {
+                                    kind: MULTIPLY,
+                                    token: Token {
+                                        kind: STAR,
+                                        span: TokenSpan {
+                                            start: 3,
+                                            end: 4,
+                                            content: "*",
+                                        },
+                                    },
+                                },
+                                right: StExpression {
+                                    kind: NUMBER(
+                                        StNumeralExpression {
+                                            value: 3,
+                                        },
+                                    ),
+                                },
+                            },
+                        ),
+                    },
+                },
+            ),
+        },
+    ),
+}
+*/

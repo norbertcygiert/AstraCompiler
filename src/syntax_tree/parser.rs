@@ -1,4 +1,4 @@
-use super::{lexer::Token, syntax_tree::{StExpression, StStatement}};
+use super::{lexer::Token, syntax_tree::{StBinaryOperator, StExpression, StOperatorType, StStatement}};
 use crate::syntax_tree::lexer::{Lexer, TokenType};
 #[allow(dead_code, unused_variables)]
 pub struct Parser {
@@ -7,15 +7,9 @@ pub struct Parser {
 }
 #[allow(dead_code)]
 impl Parser {
-    pub fn new() -> Self {
+    pub fn new(tokens: Vec<Token>) -> Self {
         Self {
-            tokens: Vec::new(),
-            current_pos: 0,
-        }
-    }
-    pub fn create_from_tokens(tokens: Vec<Token>) -> Self {
-        Self {
-            tokens,
+            tokens: tokens.iter().filter(|t| t.kind != TokenType::WHITESPACE).cloned().collect(),
             current_pos: 0,
         }
     }
@@ -56,6 +50,23 @@ impl Parser {
     }
 
     fn parse_expression(&mut self) -> Option<StExpression> {
+        return self.parse_binary_expression(0)
+    }
+    fn parse_binary_operator(&mut self) -> Option<StBinaryOperator> {
+        let token = self.consume_expr()?;
+        let k = match token.kind {
+            TokenType::PLUS => Some(StOperatorType::ADD),
+            TokenType::MINUS => Some(StOperatorType::SUBTRACT),
+            TokenType::STAR => Some(StOperatorType::MULTIPLY),
+            TokenType::SLASH => Some(StOperatorType::DIVIDE),
+            _ => None,
+        };
+        return match k {
+            Some(op) => Some(StBinaryOperator::new(op, token.clone())),
+            None => None,
+        }
+    }
+    fn parse_primary_expression(&mut self) -> Option<StExpression> {
         let token = self.consume_expr()?;
         return match token.kind {
             super::lexer::TokenType::NUMBER(val) => {
@@ -64,6 +75,24 @@ impl Parser {
             _ => { None }
         }
     }
+    fn parse_binary_expression(&mut self, precedence: u8) -> Option<StExpression> {
+        let mut left = self.parse_primary_expression()?;
+        while let Some(op) = self.parse_binary_operator() { //checking next operator precedence
+            let p= op.precedence();
+            if p <= precedence {
+                break;
+            }
+            let right = self.parse_binary_expression(p)?;
+            left = StExpression::binary(op, left, right);
+        };
+        
+        return Some(left)
+    }
+
+    //fn precedence(&Token) -> u8 {
+
+    //}
+
 
     fn peek(&self, offset: isize  ) -> Option<&Token> {
         self.tokens.get((self.current_pos as isize + offset) as usize)
