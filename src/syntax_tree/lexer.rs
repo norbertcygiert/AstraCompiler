@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[allow(dead_code)]
 pub enum TokenType {     
     NUMBER(i64),     
@@ -12,12 +12,12 @@ pub enum TokenType {
     INVALID,
     WHITESPACE
 } 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[allow(dead_code)]
 pub struct TokenSpan {     
-    start: usize,     
-    end: usize,     
-    content: String, 
+    pub(crate) start: usize,     
+    pub(crate) end: usize,     
+    pub(crate) content: String, 
 } 
 #[allow(dead_code)]
 impl TokenSpan {     
@@ -28,11 +28,11 @@ impl TokenSpan {
     
     pub fn len(&self) -> usize{ self.end - self.start }
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[allow(dead_code)]
 pub struct Token { 
-    kind: TokenType, 
-    span: TokenSpan,
+    pub(crate) kind: TokenType, 
+    pub(crate) span: TokenSpan,
 }
 
 impl Token {
@@ -44,7 +44,7 @@ pub struct Lexer<'a> {
     input: &'a str,
     current_pos: usize,
 }
-#[allow(dead_code)]
+#[allow(dead_code, unused_assignments)]
 impl <'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self { input, current_pos: 0 }
