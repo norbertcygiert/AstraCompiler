@@ -91,7 +91,7 @@ impl Parser {
         while let Some(op) = self.parse_binary_operator() { //checking next operator precedence
             self.consume_expr();
             let p= op.precedence();
-            if p <= precedence {
+            if p < precedence { //22.03.2025 bugfix
                 break;
             }
             let right = self.parse_binary_expression(p)?;
