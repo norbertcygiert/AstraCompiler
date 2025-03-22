@@ -70,11 +70,16 @@ pub struct StBinaryExpression {
 pub struct StNumeralExpression {
     value: i64,
 }
+#[derive(Debug)]
+pub struct StParenthesizedExpression {
+    expression: Box<StExpression>,
+}
 
 #[derive(Debug)]
 pub enum StExpressionType {
     NUMBER(StNumeralExpression),
     BINARY(StBinaryExpression),
+    PARENTHESIZED(StParenthesizedExpression)
 }
 
 
@@ -86,11 +91,21 @@ impl StExpression {
     pub fn new(kind: StExpressionType) -> Self {
         Self { kind }
     }
+    
     pub fn number(value: i64) -> Self {
         Self::new(StExpressionType::NUMBER(StNumeralExpression { value }))
     }
+
     pub fn binary(op: StBinaryOperator, left: StExpression, right: StExpression) -> Self {
-        StExpression::new(StExpressionType::BINARY(StBinaryExpression{ left: Box::new(left),operator: op, right: Box::new(right) }))
+        StExpression::new(StExpressionType::BINARY(StBinaryExpression{ 
+            left: Box::new(left),
+            operator: op, 
+            right: Box::new(right) 
+        }))
+    }
+
+    pub fn parenthesized(expression: StExpression)  -> Self {
+        StExpression::new(StExpressionType::PARENTHESIZED(StParenthesizedExpression { expression: Box::new(expression) }))
     }
 }
 

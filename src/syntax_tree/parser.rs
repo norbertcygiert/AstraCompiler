@@ -20,7 +20,7 @@ impl Parser {
             tokens.push(token);
         }
         Self {
-            tokens,
+            tokens: tokens.iter().filter(|t| t.kind != TokenType::WHITESPACE).cloned().collect(),
             current_pos: 0,
         }
     }
@@ -53,7 +53,7 @@ impl Parser {
         return self.parse_binary_expression(0)
     }
     fn parse_binary_operator(&mut self) -> Option<StBinaryOperator> {
-        let token = self.consume_expr()?;
+        let token = self.current_token()?;
         let k = match token.kind {
             TokenType::PLUS => Some(StOperatorType::ADD),
             TokenType::MINUS => Some(StOperatorType::SUBTRACT),
@@ -72,12 +72,24 @@ impl Parser {
             super::lexer::TokenType::NUMBER(val) => {
                 Some(StExpression::number(val))
             },
+
+            super::lexer::TokenType::LEFTPAR => {
+                let expr = self.parse_expression()?; // Parentheses containing another expression
+                let token = self.consume_expr()?;
+                if token.kind != super::lexer::TokenType::RIGHTPAR {
+                    panic!("Mismatched parentheses near token: {:?}", token);
+                }
+                Some(expr)
+            },
+
+
             _ => { None }
         }
     }
     fn parse_binary_expression(&mut self, precedence: u8) -> Option<StExpression> {
         let mut left = self.parse_primary_expression()?;
         while let Some(op) = self.parse_binary_operator() { //checking next operator precedence
+            self.consume_expr();
             let p= op.precedence();
             if p <= precedence {
                 break;
