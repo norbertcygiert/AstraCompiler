@@ -22,7 +22,7 @@ pub enum StStatementType {
 
 #[derive(Debug)]
 pub struct StStatement {
-    kind: StStatementType,
+    pub kind: StStatementType,
 }
 impl StStatement {
     pub fn new(kind: StStatementType) -> Self {
@@ -43,8 +43,9 @@ pub enum StOperatorType {
     DIVIDE,
 }
 #[derive(Debug)]
+#[allow(unused)]
 pub struct StBinaryOperator {
-    kind: StOperatorType,
+    pub kind: StOperatorType,
     token: super::lexer::Token,
 }
 impl StBinaryOperator {
@@ -68,11 +69,11 @@ pub struct StBinaryExpression {
 }
 #[derive(Debug)]
 pub struct StNumeralExpression {
-    value: i64,
+    pub value: i64,
 }
 #[derive(Debug)]
 pub struct StParenthesizedExpression {
-    expression: Box<StExpression>,
+    pub expression: Box<StExpression>,
 }
 
 #[derive(Debug)]
@@ -85,7 +86,7 @@ pub enum StExpressionType {
 
 #[derive(Debug)]
 pub struct StExpression {
-    kind: StExpressionType,
+    pub kind: StExpressionType,
 }
 impl StExpression {
     pub fn new(kind: StExpressionType) -> Self {

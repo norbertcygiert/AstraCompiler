@@ -2,6 +2,8 @@ mod syntax_tree;
 
 use syntax_tree::lexer::Lexer;
 use syntax_tree::parser::Parser;
+use syntax_tree::evaluator::Evaluator;
+use syntax_tree::traverser::ActualST;
 fn test_lexer(i: &str) {
     let input = i;
     let mut lexer = Lexer::new(input);
@@ -13,9 +15,15 @@ fn test_lexer(i: &str) {
     println!();
     //let mut parser = Parser::create_from_input(input); //this also works
     let mut parser = Parser::new(tokens);
+    let mut ast = ActualST::new();
     while let Some(statement) = parser.next_statement() { 
         println!("{:#?}",statement); //Pretty print
+        ast.push_statement(statement);
     }
+    
+    let mut eval = Evaluator::new();
+    ast.find(&mut eval);
+    println!("Statement result: {:?}", eval.last_value.unwrap()); //print the result of 
 
 }
 
@@ -24,63 +32,5 @@ fn main() {
 }
 /*
 OUTPUT FOR test_lexer("( 7 + 4 ) * 32"):
-StStatement {
-    kind: EXPRESSION(
-        StExpression {
-            kind: BINARY(
-                StBinaryExpression {
-                    left: StExpression {
-                        kind: BINARY(
-                            StBinaryExpression {
-                                left: StExpression {
-                                    kind: NUMBER(
-                                        StNumeralExpression {
-                                            value: 7,
-                                        },
-                                    ),
-                                },
-                                operator: StBinaryOperator {
-                                    kind: ADD,
-                                    token: Token {
-                                        kind: PLUS,
-                                        span: TokenSpan {
-                                            start: 4,
-                                            end: 5,
-                                            content: "+",
-                                        },
-                                    },
-                                },
-                                right: StExpression {
-                                    kind: NUMBER(
-                                        StNumeralExpression {
-                                            value: 4,
-                                        },
-                                    ),
-                                },
-                            },
-                        ),
-                    },
-                    operator: StBinaryOperator {
-                        kind: MULTIPLY,
-                        token: Token {
-                            kind: STAR,
-                            span: TokenSpan {
-                                start: 10,
-                                end: 11,
-                                content: "*",
-                            },
-                        },
-                    },
-                    right: StExpression {
-                        kind: NUMBER(
-                            StNumeralExpression {
-                                value: 32,
-                            },
-                        ),
-                    },
-                },
-            ),
-        },
-    ),
-}
+    Some(352) (not uwrapped) (correct)
 */

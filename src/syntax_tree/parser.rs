@@ -79,7 +79,7 @@ impl Parser {
                 if token.kind != super::lexer::TokenType::RIGHTPAR {
                     panic!("Mismatched parentheses near token: {:?}", token);
                 }
-                Some(expr)
+                Some(StExpression::parenthesized(expr))
             },
 
 
