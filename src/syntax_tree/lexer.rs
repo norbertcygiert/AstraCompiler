@@ -51,9 +51,6 @@ impl <'a> Lexer<'a> {
     }
 
     pub fn next_token(&mut self) -> Option<Token> {
-        if self.current_pos > self.input.len(){
-            return None;
-        }
 
         if self.current_pos == self.input.len() {
             let eof_indicator: char = '\0';
@@ -81,13 +78,13 @@ impl <'a> Lexer<'a> {
                 kind = self.consume_symbol();
             }
             let end: usize = self.current_pos;
-            let literal: String = self.input[start..end].to_string();
-            let local_span: TokenSpan = TokenSpan::new(start, end, literal);
+            let content: String = self.input[start..end].to_string();
+            let local_span: TokenSpan = TokenSpan::new(start, end, content);
             Token::new(kind, local_span)
-        })
+        });
     }
 
-    fn consume_symbol(&mut self) -> TokenType{ //copilot generated :)
+    fn consume_symbol(&mut self) -> TokenType{
         let c = self.consume_token().unwrap();
         match c {
             '+' =>  TokenType::PLUS,

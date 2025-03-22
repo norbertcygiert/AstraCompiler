@@ -1,5 +1,5 @@
-use super::{lexer::Token, syntax_tree::{StBinaryOperator, StExpression, StOperatorType, StStatement}};
-use crate::syntax_tree::lexer::{Lexer, TokenType};
+use crate::syntax_tree::syntax_tree::{StBinaryOperator, StExpression, StBinaryOperatorType, StStatement};
+use crate::syntax_tree::lexer::{Token, TokenType};
 #[allow(dead_code, unused_variables)]
 pub struct Parser {
     tokens: Vec<Token>,
@@ -9,32 +9,10 @@ pub struct Parser {
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
-            tokens: tokens.iter().filter(|t| t.kind != TokenType::WHITESPACE).cloned().collect(),
+            tokens: tokens.iter().filter(|t| t.kind != TokenType::WHITESPACE).map(|t| t.clone()).collect(),
             current_pos: 0,
         }
     }
-    pub fn create_from_input(input:&str) -> Self {
-        let mut lexer = Lexer::new(input);
-        let mut tokens = Vec::new();
-        while let Some(token) = lexer.next_token() {
-            tokens.push(token);
-        }
-        Self {
-            tokens: tokens.iter().filter(|t| t.kind != TokenType::WHITESPACE).cloned().collect(),
-            current_pos: 0,
-        }
-    }
-    pub fn parse_input(input: &str) -> Self {
-        let mut lexer = Lexer::new(input);
-        let mut tokens = Vec::new();
-        while let Some(token) = lexer.next_token() {
-            tokens.push(token);
-        }
-        Self {
-            tokens,
-            current_pos: 0,
-        }
-    }   
 
     pub fn next_statement(&mut self) -> Option<StStatement> {
         return self.parse_statement();
@@ -50,24 +28,11 @@ impl Parser {
     }
 
     fn parse_expression(&mut self) -> Option<StExpression> {
-        return self.parse_binary_expression(0)
+        return self.parse_binary_expression(0);
     }
-    fn parse_binary_operator(&mut self) -> Option<StBinaryOperator> {
-        let token = self.current_token()?;
-        let k = match token.kind {
-            TokenType::PLUS => Some(StOperatorType::ADD),
-            TokenType::MINUS => Some(StOperatorType::SUBTRACT),
-            TokenType::STAR => Some(StOperatorType::MULTIPLY),
-            TokenType::SLASH => Some(StOperatorType::DIVIDE),
-            _ => None,
-        };
-        return match k {
-            Some(op) => Some(StBinaryOperator::new(op, token.clone())),
-            None => None,
-        }
-    }
+    
     fn parse_primary_expression(&mut self) -> Option<StExpression> {
-        let token = self.consume_expr()?;
+        let token = self.consume_token()?;
         return match token.kind {
             super::lexer::TokenType::NUMBER(val) => {
                 Some(StExpression::number(val))
@@ -75,30 +40,42 @@ impl Parser {
 
             super::lexer::TokenType::LEFTPAR => {
                 let expr = self.parse_expression()?; // Parentheses containing another expression
-                let token = self.consume_expr()?;
+                let token = self.consume_token()?;
                 if token.kind != super::lexer::TokenType::RIGHTPAR {
-                    panic!("Mismatched parentheses near token: {:?}", token);
+                    panic!("Expected Right Parentheses near token: {:?}", token);
                 }
                 Some(StExpression::parenthesized(expr))
             },
 
-
             _ => { None }
         }
     }
+
+    fn parse_binary_operator(&mut self) -> Option<StBinaryOperator> {
+        let token = self.current_token()?;
+        let k = match token.kind {
+            TokenType::PLUS => { Some(StBinaryOperatorType::ADD) },
+            TokenType::MINUS => { Some(StBinaryOperatorType::SUBTRACT) },
+            TokenType::STAR => { Some(StBinaryOperatorType::MULTIPLY) },
+            TokenType::SLASH => { Some(StBinaryOperatorType::DIVIDE) },
+            _ => None,
+        };
+        return k.map(|k| StBinaryOperator::new(k, token.clone()));
+    }
+
     fn parse_binary_expression(&mut self, precedence: u8) -> Option<StExpression> {
         let mut left = self.parse_primary_expression()?;
         while let Some(op) = self.parse_binary_operator() { //checking next operator precedence
-            self.consume_expr();
-            let p= op.precedence();
-            if p < precedence { //22.03.2025 bugfix
+           
+            if op.precedence() < precedence {
                 break;
             }
-            let right = self.parse_binary_expression(p)?;
+            self.consume_token();
+            let right = self.parse_binary_expression(op.precedence() + 1)?;
             left = StExpression::binary(op, left, right);
         };
         
-        return Some(left)
+        return Some(left);
     }
 
     //fn precedence(&Token) -> u8 {
@@ -106,7 +83,7 @@ impl Parser {
     //}
 
 
-    fn peek(&self, offset: isize  ) -> Option<&Token> {
+    fn peek(&self, offset: isize) -> Option<&Token> {
         self.tokens.get((self.current_pos as isize + offset) as usize)
     }
 
@@ -114,10 +91,10 @@ impl Parser {
         self.peek(0)
     }
 
-    fn consume_expr(&mut self) -> Option<&Token> {
+    fn consume_token(&mut self) -> Option<&Token> {
         self.current_pos += 1;
         let token = self.peek(-1)?;
-        return Some(token)
+        return Some(token);
     }
 
 

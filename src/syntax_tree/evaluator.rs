@@ -1,7 +1,5 @@
 use crate::syntax_tree::syntax_tree::{StBinaryExpression, StNumeralExpression};
-
-use super::traverser::AstTraverser;
-
+use crate::syntax_tree::syntax_tree::AstTraverser;
 
 pub struct Evaluator {
     pub last_value: Option<i64>,
@@ -14,9 +12,8 @@ impl Evaluator {
 }
 
 impl AstTraverser for Evaluator {
-
     fn find_number(&mut self, num: &StNumeralExpression) {
-        self.last_value = Some(num.value)
+        self.last_value = Some(num.value);
     }
     
     fn find_binary_expression(&mut self, expr: &StBinaryExpression) {
@@ -25,10 +22,10 @@ impl AstTraverser for Evaluator {
         self.find_expression(&expr.right);
         let right = self.last_value.unwrap();
         self.last_value = Some(match expr.operator.kind {
-            super::syntax_tree::StOperatorType::ADD => left + right,
-            super::syntax_tree::StOperatorType::SUBTRACT => left - right,
-            super::syntax_tree::StOperatorType::MULTIPLY => left * right,
-            super::syntax_tree::StOperatorType::DIVIDE => left / right,
+            super::syntax_tree::StBinaryOperatorType::ADD => left + right,
+            super::syntax_tree::StBinaryOperatorType::SUBTRACT => left - right,
+            super::syntax_tree::StBinaryOperatorType::MULTIPLY => left * right,
+            super::syntax_tree::StBinaryOperatorType::DIVIDE => left / right,
         });
     }
 
