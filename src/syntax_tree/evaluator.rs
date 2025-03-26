@@ -1,5 +1,5 @@
-use crate::syntax_tree::syntax_tree::{StBinaryExpression, StNumeralExpression};
-use crate::syntax_tree::syntax_tree::AstTraverser;
+use crate::syntax_tree::syntax_tree::{StBinaryExpression, StNumeralExpression, AstTraverser};
+use crate::syntax_tree::lexer::TokenSpan;
 
 pub struct Evaluator {
     pub last_value: Option<i64>,
@@ -29,4 +29,7 @@ impl AstTraverser for Evaluator {
         });
     }
 
+    fn find_error(&mut self, span: &TokenSpan) {
+        panic!("Error found at span: {:?}", span);
+    }
 }

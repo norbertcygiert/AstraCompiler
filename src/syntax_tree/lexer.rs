@@ -1,5 +1,5 @@
+use std::fmt::{Display, Formatter};
 #[derive(Debug, PartialEq, Clone)]
-#[allow(dead_code)]
 pub enum TokenType {     
     NUMBER(i64),     
     PLUS,     
@@ -12,8 +12,24 @@ pub enum TokenType {
     INVALID,
     WHITESPACE
 } 
+impl Display for TokenType{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+       match self{
+            TokenType::NUMBER(n) => write!(f, "Number: {}", n),
+            TokenType::PLUS => write!(f, "+"),
+            TokenType::MINUS => write!(f, "-"),
+            TokenType::STAR => write!(f, "*"),
+            TokenType::SLASH => write!(f, "/"),
+            TokenType::LEFTPAR => write!(f, "("),
+            TokenType::RIGHTPAR => write!(f, ")"),
+            TokenType::EOF => write!(f, "EOF"),
+            TokenType::INVALID => write!(f, "Invalid"),
+            TokenType::WHITESPACE => write!(f, "Whitespace"),
+       }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
-#[allow(dead_code)]
 pub struct TokenSpan {     
     pub(crate) start: usize,     
     pub(crate) end: usize,     

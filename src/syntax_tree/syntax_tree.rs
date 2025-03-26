@@ -1,4 +1,4 @@
-use super::lexer::Token;
+use super::lexer::{Token, TokenSpan};
 #[derive(Debug)]
 pub struct ActualST {
     pub statements: Vec<StStatement>,
@@ -45,11 +45,14 @@ pub trait AstTraverser {
             StExpressionType::PARENTHESIZED(p) => {
                 self.find_parenthesized_expression(p);
             },
+            StExpressionType::INVALID(span) => {
+                self.find_error(span);
+            }
         }
     }
-
     fn find_number(&mut self, num: &StNumeralExpression);
-
+    fn find_error(&mut self, span: &TokenSpan);
+    
     fn find_binary_expression(&mut self, expr: &StBinaryExpression){
         self.find_expression(&expr.left);
         self.find_expression(&expr.right);
@@ -58,6 +61,7 @@ pub trait AstTraverser {
     fn find_parenthesized_expression(&mut self, expr: &StParenthesizedExpression){
         self.find_expression(&expr.expression);
     }
+
 }
 
 
@@ -127,7 +131,8 @@ pub struct StParenthesizedExpression {
 pub enum StExpressionType {
     NUMBER(StNumeralExpression),
     BINARY(StBinaryExpression),
-    PARENTHESIZED(StParenthesizedExpression)
+    PARENTHESIZED(StParenthesizedExpression),
+    INVALID(TokenSpan),  
 }
 
 #[derive(Debug)]
@@ -153,6 +158,10 @@ impl StExpression {
 
     pub fn parenthesized(expression: StExpression)  -> Self {
         StExpression::new(StExpressionType::PARENTHESIZED(StParenthesizedExpression { expression: Box::new(expression) }))
+    }
+
+    pub fn invalid(span: TokenSpan) -> Self {
+        StExpression::new(StExpressionType::INVALID(span))
     }
 }
 
