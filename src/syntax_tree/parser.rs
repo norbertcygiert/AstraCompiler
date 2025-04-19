@@ -1,128 +1,187 @@
 use std::cell::Cell;
 
-use crate::diagnostics::DiagnosticsVecCell;
-use crate::syntax_tree::syntax_tree::{StBinaryOperator, StExpression, StBinaryOperatorType, StStatement};
-use crate::syntax_tree::lexer::{Token, TokenType};
-#[allow(dead_code, unused_variables)]
+use crate::syntax_tree::{BinaryOperator, BinaryOperatorType, Expression, ASTStatement, UnaryOperator, UnaryOperatorType, lexer::{Token, TokenType}};
+use crate::diagnostics::DiagnosticsVectorCell;
 
-pub struct ProgramCounter {
+pub struct CompileTimeCounter {
     value: Cell<usize>,
 }
 
-impl ProgramCounter {
+impl CompileTimeCounter {
     pub fn new() -> Self {
         Self { value: Cell::new(0) }
     }
+
     pub fn add(&self, x: usize) {
-        self.value.set(self.value.get() + x);
+        let current_value = self.value.get();
+        self.value.set(current_value + x);
     }
-    pub fn get(&self) -> usize {
-        self.value.get()
+
+    pub fn get_value(&self) -> usize {
+        return self.value.get();
     }
 }
 
 pub struct Parser {
     tokens: Vec<Token>,
-    current_pos: ProgramCounter,
-    diagnostics_vec: DiagnosticsVecCell,
+    current: CompileTimeCounter,
+    diagnostics_vec: DiagnosticsVectorCell,
 }
-#[allow(dead_code)]
+
 impl Parser {
-    pub fn new(tokens: Vec<Token>, diagnostics_vec: DiagnosticsVecCell ) -> Self {
+    pub fn new( tokens: Vec<Token>, diagnostics_vec: DiagnosticsVectorCell ) -> Self {
         Self {
-            tokens: tokens.iter().filter(|t| t.kind != TokenType::WHITESPACE).map(|t| t.clone()).collect(),
-            current_pos: ProgramCounter::new(),
+            tokens: tokens.iter()
+            .filter( |token| token.kind != TokenType::WHITESPACE )
+            .map(|token| token.clone()).collect(),
+            current: CompileTimeCounter::new(),
             diagnostics_vec,
         }
     }
 
-    pub fn next_statement(&mut self) -> Option<StStatement> {
-        if self.current_token().kind == TokenType::EOF {
+    pub fn next_statement(&mut self) -> Option<ASTStatement> {
+        if self.is_at_end() {
             return None;
         }
         return Some(self.parse_statement());
     }
 
-    fn parse_statement(&mut self) -> StStatement {
-        let expr = self.parse_expression();
-        return StStatement::expression(expr);
+    fn is_at_end(&self) -> bool {
+        return self.current_token().kind == TokenType::EOF;
     }
 
-    fn parse_expression(&mut self) -> StExpression{
-        return self.parse_binary_expression(0);
-    }
-    
-    fn parse_primary_expression(&mut self) -> StExpression {
-        let token: &Token = self.consume_token();
-        return match token.kind {
-            super::lexer::TokenType::NUMBER(val) => {
-                StExpression::number(val)
+    fn parse_statement(&mut self) -> ASTStatement {
+        match self.current_token().kind {
+            TokenType::LET => {
+                self.parse_let_statement()
             },
-            super::lexer::TokenType::LEFTPAR => {
-                let expr = self.parse_expression(); // Parentheses containing another expression
-                let token = self.consume_token();
-                if token.kind != super::lexer::TokenType::RIGHTPAR {
-                    panic!("Expected Right Parentheses near token: {:?}", token);
-                }
-                StExpression::parenthesized(expr)
-            },
-            _ => { 
-                self.diagnostics_vec.borrow_mut().throw_expected_expression(token); 
-                StExpression::invalid(token.span.clone())
+            _ => {
+                self.parse_expression_statement()
             }
         }
     }
 
-    fn parse_binary_operator(&mut self) -> Option<StBinaryOperator> {
-        let token = self.current_token();
-        let k = match token.kind {
-            TokenType::PLUS => { Some(StBinaryOperatorType::ADD) },
-            TokenType::MINUS => { Some(StBinaryOperatorType::SUBTRACT) },
-            TokenType::STAR => { Some(StBinaryOperatorType::MULTIPLY) },
-            TokenType::SLASH => { Some(StBinaryOperatorType::DIVIDE) },
-            _ => { None }
-        };
-        return k.map(|k| StBinaryOperator::new(k, token.clone()));
+    fn parse_let_statement(&mut self) -> ASTStatement {
+        self.consume_with_check(TokenType::LET);
+        let identifier = self.consume_with_check(TokenType::IDENTIFIER).clone();
+        self.consume_with_check(TokenType::EQUALS);
+        let expr = self.parse_expression();
+        return ASTStatement::let_statement(identifier, expr);
     }
 
-    fn parse_binary_expression(&mut self, precedence: u8) -> StExpression {
-        let mut left = self.parse_primary_expression();
-        while let Some(op) = self.parse_binary_operator() { //checking next operator precedence
-            if op.precedence() < precedence {
+    fn parse_expression_statement(&mut self) -> ASTStatement {
+        let expr = self.parse_expression();
+        return ASTStatement::expression(expr);
+    }
+
+    fn parse_expression(&mut self) -> Expression {
+        return self.parse_binary_expression(0);
+    }
+
+    fn parse_binary_expression(&mut self, precedence: u8) -> Expression {
+        let mut left = self.parse_unary_expression();
+
+        while let Some(operator) = self.parse_binary_operator() {
+            let operator_precedence = operator.precedence();
+            if operator_precedence < precedence {
                 break;
             }
-            self.consume_token();
-            let right = self.parse_binary_expression(op.precedence() + 1);
-            left = StExpression::binary(op, left, right);
-        };
-        
+            self.consume();
+            let right = self.parse_binary_expression(operator_precedence);
+            left = Expression::binary(operator, left, right);
+        }
+
         return left;
     }
 
+    fn parse_unary_expression(&mut self) -> Expression {
+        if let Some(operator) = self.parse_unary_operator() {
+            self.consume();
+            let operand = self.parse_unary_expression();
+            return Expression::unary(operator, operand);
+        }
+        return self.parse_primary_expression();
+    }
+
+    fn parse_unary_operator(&mut self) -> Option<UnaryOperator> {
+        let token = self.current_token();
+        let kind = match token.kind {
+            TokenType::MINUS => {
+                Some(UnaryOperatorType::MINUS)
+            },
+            TokenType::NOT => {
+                Some(UnaryOperatorType::NOT)
+            },
+            _ => {
+                None
+            }
+        };
+        return kind.map(|kind| UnaryOperator::new(kind, token.clone()));
+    }
+
+    fn parse_binary_operator(&mut self) -> Option<BinaryOperator> {
+        let token = self.current_token();
+        let kind = match token.kind {
+            TokenType::PLUS => {
+                Some(BinaryOperatorType::PLUS)
+            }
+            TokenType::MINUS => { Some(BinaryOperatorType::MINUS) }
+            TokenType::ASTERISK => { Some(BinaryOperatorType::MULTIPLY) }
+            TokenType::SLASH => { Some(BinaryOperatorType::DIVIDE)},
+            TokenType::AMPERSAND => { Some(BinaryOperatorType::AND) },
+            TokenType::PIPE => { Some(BinaryOperatorType::OR) },
+            TokenType::RETURN => { Some(BinaryOperatorType::XOR) },
+            TokenType::POWER => { Some(BinaryOperatorType::POWER) },
+            _ => { None }
+        };
+        return kind.map(|kind| BinaryOperator::new(kind, token.clone()));
+    }
+
+    fn parse_primary_expression(&mut self) -> Expression {
+        let token = self.consume();
+        return match token.kind {
+            TokenType::NUMERAL(number) => {
+                Expression::number(number)
+            }
+            TokenType::LEFTPAR => {
+                let expr = self.parse_expression();
+                self.consume_with_check(TokenType::RIGHTPAR);
+                Expression::parenthesized(expr)
+            }
+            TokenType::IDENTIFIER => {
+                Expression::identifier(token.clone())
+            }
+            _ => {
+                self.diagnostics_vec.borrow_mut().report_expected_expression(token);
+                Expression::error(
+                    token.span.clone()
+                )
+            }
+        };
+    }
+
     fn peek(&self, offset: isize) -> &Token {
-        let mut index = (self.current_pos.get() as isize + offset) as usize;
+        let mut index = (self.current.get_value() as isize + offset) as usize;
         if index >= self.tokens.len() {
             index = self.tokens.len() - 1;
         }
-        self.tokens.get(index).unwrap()
+
+        return self.tokens.get(index).unwrap();
     }
 
-    fn current_token(&self) -> &Token {
-        self.peek(0)
-    }
+    fn current_token(&self) -> &Token { return self.peek(0); }
 
-    fn consume_token(&self) -> &Token {
-        self.current_pos.add(1);
-        self.peek(-1)
+    fn consume(&self) -> &Token {
+        self.current.add(1);
+        return self.peek(-1);
     }
 
     fn consume_with_check(&self, kind: TokenType) -> &Token {
-        let token = self.consume_token();
+        let token = self.consume();
         if token.kind != kind {
-            self.diagnostics_vec.borrow_mut().throw_unexpected_token(&kind, token);
+            self.diagnostics_vec.borrow_mut().report_unexpected_token(&kind, token);
         }
-        token
+
+        return token;
     }
-
-
 }

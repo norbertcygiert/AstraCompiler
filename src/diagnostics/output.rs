@@ -1,42 +1,65 @@
 use std::cmp;
-use termion::color::*;
+use termion::color;
 use crate::diagnostics::Diagnostic;
-use crate::text::source::{self, SourceCode};
+use crate::code::source_code::SourceCode;
 
-const PREFIX_LEN: usize = 8; 
+const PREFIX_LENGTH: usize = 8;
 
-pub struct DiagnosticsOutput<'a> {
-    text: &'a SourceCode,
-    diag: &'a [Diagnostic],
+pub struct DiagnosticsPrinter<'a> {
+    code: &'a SourceCode,
+    diagnostics: &'a [Diagnostic],
 }
 
-impl <'a> DiagnosticsOutput<'a> {
-    pub fn new(text: &'a SourceCode, diag: &'a [Diagnostic]) -> Self {
-        Self { text, diag }
+
+impl <'a> DiagnosticsPrinter<'a> {
+    pub fn new(code: &'a SourceCode, diagnostics: &'a [Diagnostic]) -> Self {
+        Self { code, diagnostics }
     }
 
-    pub fn stringify_diagnostic(&self, diag: &Diagnostic) -> String {
-        let line_index = self.text.line_index(diag.span.start);
-        let line = self.text.get_line(line_index);
-        let line_start = self.text.line_start(line_index);
+    pub fn stringify_diagnostic(&self, diagnostic: &Diagnostic) -> String {
+        let line_index = self.code.line_index(diagnostic.span.start);
+        let line = self.code.get_line(line_index);
+        let line_start = self.code.line_start(line_index);
 
-        let col = diag.span.start - line_start;
-        let prefix_start = cmp::max(0, col as isize - PREFIX_LEN as isize) as usize;
-        let prefix_end = col;
-        let suffix_start = cmp::min(col + diag.span.len(), line.len()) + 1;
-        let suffix_end = cmp::min(suffix_start + diag.span.len() + PREFIX_LEN, line.len());
+        let column = diagnostic.span.start - line_start;
 
+        let (prefix, span, suffix) = self.get_text_spans(diagnostic, &line, column);
+
+        let indent = cmp::min(PREFIX_LENGTH, column);
+        let arrow_pointers = Self::format_arrow(diagnostic, indent);
+        let error_msg = Self::format_error_message(diagnostic, indent, column, line_index);
+        return format!("{}{}{}{}{}\n{}\n{}{}{}", prefix, color::Fg(color::Red), span, color::Fg(color::Reset), suffix, arrow_pointers, color::Fg(color::LightRed), error_msg, color::Fg(color::Reset),);
+    }
+
+    fn format_error_message(diagnostic: &Diagnostic, indent: usize, column: usize, line: usize) -> String {
+        return format!("{:indent$}{} at ({},{})", "", diagnostic.message, line, column, indent = indent);
+    }
+
+    fn format_arrow(diagnostic: &Diagnostic, indent: usize) -> String {
+        let arrow_pointers = format!("{:indent$}{}", "", std::iter::repeat('^')
+        .take( diagnostic.span.length())
+        .collect::<String>(), indent = indent);
+    
+        return arrow_pointers;
+    }
+
+    fn get_text_spans(&'a self, diagnostic: &Diagnostic, line: &'a str, column: usize) -> (&'a str, &'a str, &'a str) {
+        let prefix_start = cmp::max(0, column as isize - PREFIX_LENGTH as isize) as usize;
+        let prefix_end = column;
+
+        let suffix_start = cmp::min(column + diagnostic.span.length(), line.len());
+        let suffix_end = cmp::min(suffix_start + PREFIX_LENGTH, line.len());
 
         let prefix = &line[prefix_start..prefix_end];
-        let suffix = &line[suffix_start..suffix_end];
         let span = &line[prefix_end..suffix_start];
+        let suffix = &line[suffix_start..suffix_end];
 
-
-        let indent = cmp::min(PREFIX_LEN, col);
-        let pointer = format!("{:indent$}{}", "", std::iter::repeat("^").take(diag.span.len()).collect::<String>(), indent = indent);
-        let arrow = format!("{:indent$}|", "", indent = indent);
-        let msg = format!("{:indent$}: {}", "" , diag.content, indent = indent);
-        format!("{}{}{}{}{}\n{}\n{}\n{}", prefix, termion::color::Fg(Red) ,span, termion::color::Fg(Reset) ,suffix, pointer, arrow, msg)
+        return (prefix, span, suffix);
     }
 
+    pub fn print(&self) {
+        for diagnostic in self.diagnostics {
+            println!("{}", self.stringify_diagnostic(diagnostic));
+        }
+    }
 }
