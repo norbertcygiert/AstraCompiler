@@ -28,7 +28,7 @@ pub fn read_sourcefile() -> String {
 
     let passed_arg = &args[1];
 
-    if passed_arg.split('.').nth(1) != Some("as") {
+    if passed_arg.split('.').nth(1) != Some("astra") {
         eprintln!("Astra Compiler:\nProvided file has invalid extension, expected AstraScript file with \".as\" extension");
         process::exit(1);
     }

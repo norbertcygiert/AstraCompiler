@@ -100,7 +100,7 @@ impl<'a> Lexer<'a> {
         let c = self.current_char();
         return c.map(|c| {
             let start = self.current_pos;
-            let mut kind = TokenType::INVALID;
+            let kind;
             if Lexer::is_number_start(&c) {
                 let number: i64 = self.consume_number();
                 kind = TokenType::NUMERAL(number);
