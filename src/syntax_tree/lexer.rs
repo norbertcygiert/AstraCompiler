@@ -11,7 +11,7 @@ pub enum TokenType {
     EQUALS,
     AMPERSAND,
     PIPE,
-    RETURN,
+    CARET,
     POWER,
     NOT,
     // KEYWORDS
@@ -37,7 +37,7 @@ impl Display for TokenType {
             TokenType::EQUALS => write!(f, "="),
             TokenType::AMPERSAND => write!(f, "&"),
             TokenType::PIPE => write!(f, "|"),
-            TokenType::RETURN => write!(f, "^"),
+            TokenType::CARET => write!(f, "^"),
             TokenType::POWER => write!(f, "**"),
             TokenType::NOT => write!(f, "~"),
 
@@ -151,7 +151,7 @@ impl<'a> Lexer<'a> {
             '=' => TokenType::EQUALS,
             '&' => TokenType::AMPERSAND,
             '|' => TokenType::PIPE,
-            '^' => TokenType::RETURN,
+            '^' => TokenType::CARET,
             '~' => TokenType::NOT,
             _ => TokenType::INVALID,
         };

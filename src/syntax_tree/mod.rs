@@ -52,24 +52,12 @@ pub trait ASTTraverser {
 
     fn expression_dispatch(&mut self, expression: &Expression) {
         match &expression.kind {
-            ExpressionType::NUMBER(number) => {
-                self.goto_number_expression(number);
-            }
-            ExpressionType::BINARY(expr) => {
-                self.goto_binary_expression(expr);
-            }
-            ExpressionType::PARENTHESIZED(expr) => {
-                self.goto_parenthesized_expression(expr);
-            }
-            ExpressionType::ERROR(span) => {
-                self.goto_error(span);
-            }
-            ExpressionType::VARIABLE(expr) => {
-                self.goto_variable_expression(expr);
-            }
-            ExpressionType::UNARY(expr) => {
-                self.goto_unary_expression(expr);
-            }
+            ExpressionType::NUMBER(number) => self.goto_number_expression(number),
+            ExpressionType::BINARY(expr) => self.goto_binary_expression(expr),
+            ExpressionType::PARENTHESIZED(expr) => self.goto_parenthesized_expression(expr),
+            ExpressionType::ERROR(span) => self.goto_error(span),
+            ExpressionType::VARIABLE(expr) => self.goto_variable_expression(expr),
+            ExpressionType::UNARY(expr) => self.goto_unary_expression(expr),
         }
     }
 

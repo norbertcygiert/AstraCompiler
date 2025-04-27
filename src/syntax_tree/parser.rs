@@ -52,12 +52,9 @@ impl Parser {
 
     fn parse_statement(&mut self) -> ASTStatement {
         match self.current_token().kind {
-            TokenType::LET => {
-                self.parse_let_statement()
-            },
-            _ => {
-                self.parse_expression_statement()
-            }
+            TokenType::LET => return self.parse_let_statement(),
+
+            _ => return self.parse_expression_statement()
         }
     }
 
@@ -106,15 +103,10 @@ impl Parser {
     fn parse_unary_operator(&mut self) -> Option<UnaryOperator> {
         let token = self.current_token();
         let kind = match token.kind {
-            TokenType::MINUS => {
-                Some(UnaryOperatorType::MINUS)
-            },
-            TokenType::NOT => {
-                Some(UnaryOperatorType::NOT)
-            },
-            _ => {
-                None
-            }
+            TokenType::MINUS => Some(UnaryOperatorType::MINUS),
+            TokenType::NOT => Some(UnaryOperatorType::NOT),
+            _ => None
+            
         };
         return kind.map(|kind| UnaryOperator::new(kind, token.clone()));
     }
@@ -122,17 +114,15 @@ impl Parser {
     fn parse_binary_operator(&mut self) -> Option<BinaryOperator> {
         let token = self.current_token();
         let kind = match token.kind {
-            TokenType::PLUS => {
-                Some(BinaryOperatorType::PLUS)
-            }
-            TokenType::MINUS => { Some(BinaryOperatorType::MINUS) }
-            TokenType::ASTERISK => { Some(BinaryOperatorType::MULTIPLY) }
-            TokenType::SLASH => { Some(BinaryOperatorType::DIVIDE)},
-            TokenType::AMPERSAND => { Some(BinaryOperatorType::AND) },
-            TokenType::PIPE => { Some(BinaryOperatorType::OR) },
-            TokenType::RETURN => { Some(BinaryOperatorType::XOR) },
-            TokenType::POWER => { Some(BinaryOperatorType::POWER) },
-            _ => { None }
+            TokenType::PLUS => Some(BinaryOperatorType::PLUS),
+            TokenType::MINUS => Some(BinaryOperatorType::MINUS),
+            TokenType::ASTERISK => Some(BinaryOperatorType::MULTIPLY), 
+            TokenType::SLASH => Some(BinaryOperatorType::DIVIDE),
+            TokenType::AMPERSAND => Some(BinaryOperatorType::AND),
+            TokenType::PIPE => Some(BinaryOperatorType::OR),
+            TokenType::CARET => Some(BinaryOperatorType::XOR),
+            TokenType::POWER => Some(BinaryOperatorType::POWER),
+            _ => None 
         };
         return kind.map(|kind| BinaryOperator::new(kind, token.clone()));
     }
