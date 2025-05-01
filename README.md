@@ -14,7 +14,7 @@ cd AstraCompiler
 ```bash
 cargo build
 ```
-3. Run the AstraScript (.as) file <br>
+3. Run the AstraScript (.astra) file <br>
 ```bash
 cargo run -- <filename>
 ```
