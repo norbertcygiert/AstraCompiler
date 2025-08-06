@@ -28,10 +28,10 @@ cargo run -- -h
 - [x] Parser<br>
 - [x] Error reporting<br>
 - [x] Variables<br>
-- [ ] Unary expressions<br>
-- [ ] Conditional statements<br> 
+- [x] Unary expressions<br>
+- [x] Conditional statements<br> 
 - [ ] "While" loops<br>
-- [ ] Introduce AstraScript<br>
+- [x] Introduce AstraScript<br>
 - [ ] Type checking<br>
 - [ ] Functions<br>
 - [ ] Full AstraScript language design<br>
