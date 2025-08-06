@@ -58,7 +58,7 @@ impl FramesVector {
                 return;
             }
         }
-        panic!("Variable {} not found", indentifier);
+        panic!("Error: Variable {} not found", indentifier);
     }
 }
 
@@ -85,6 +85,40 @@ impl <'a> ASTEvaluator <'a>{
     }
 }
 impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
+
+    fn goto_while_statement(&mut self, while_statement: &ASTWhileStatement) {
+        self.push_frame();
+        self.goto_expression(&while_statement.condition);
+        while self.last_value.unwrap() != 0 {
+            self.goto_statement(&while_statement.body);
+            self.goto_expression(&while_statement.condition);
+        }
+        self.pop_frame();
+    }
+
+    fn goto_if_statement(&mut self, if_statement: &ASTIFStatement) {
+        self.push_frame();
+        self.goto_expression(&if_statement.condition);
+        if self.last_value.unwrap() != 0 {
+            self.push_frame();
+            self.goto_statement(&if_statement.then_branch);
+            self.pop_frame();
+        } else if let Some(else_branch) = &if_statement.else_branch {
+            self.push_frame();
+            self.goto_statement(&else_branch.else_statement);
+            self.pop_frame();
+        }
+        self.pop_frame();
+    }
+
+    fn goto_block_statement(&mut self, block_statement: &ASTBlockStatement) {
+        self.push_frame();
+        for statement in &block_statement.statements {
+            self.goto_statement(statement);
+        }
+        self.pop_frame();
+    }
+
     fn goto_let_statement(&mut self, let_statement: &ASTLetStatement) {
         self.goto_expression(&let_statement.initializer);
         self.frames.insert(let_statement.identifier.span.literal.clone(), self.last_value.unwrap());
@@ -125,7 +159,12 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
             BinaryOperatorType::AND => left & right,
             BinaryOperatorType::OR => left | right,
             BinaryOperatorType::XOR => left ^ right,
-            _ => panic!("Astra Compiler: Evaluator -> Unsupported binary operator: {:?}", expr.operator.kind),
+            BinaryOperatorType::GREATER => if left > right { 1 } else { 0 },
+            BinaryOperatorType::LESS => if left < right { 1 } else { 0 },
+            BinaryOperatorType::GREATEREQUALS => if left >= right { 1 } else { 0 },
+            BinaryOperatorType::LESSEQUALS => if left <= right { 1 } else { 0 },
+            BinaryOperatorType::EQUALS => if left == right { 1 } else { 0 },
+            BinaryOperatorType::NOTEQUALS => if left != right { 1 } else { 0 },
         });
     }
 
