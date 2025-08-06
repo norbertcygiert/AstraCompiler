@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use crate::compilation_unit::GlobalScope;
 use crate::syntax_tree::*;
 
-
+// Frames are used to store variables in the current scope
+// Each frame represents a scope, and the FramesVector manages multiple frames
 pub struct Frame {
     variables: HashMap<String, i64>,
 }
@@ -73,8 +74,9 @@ impl <'a> ASTEvaluator <'a>{
     pub fn new(global_scope: &'a GlobalScope) -> Self {
         Self { last_value: None, frames: FramesVector::new(), global_scope }
     }
-    fn evaluate_boolean_instruction<F>(&mut self, instruction: F) -> bool where F: FnOnce() -> bool {
-        return instruction(); //TODO: Verify that this works
+    fn evaluate_boolean_instruction<F>(&mut self, instruction: F) -> i64 where F: FnOnce() -> bool {
+        return instruction() as i64;  //TODO: Verify that this works
+        // Changed it so that evaluating a boolean returns an i64 into self.last_value from goto_binary_expression() function
     }
 
     fn push_frame(&mut self) {
@@ -111,6 +113,13 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
         self.pop_frame();
     }
 
+    // IMPORTANT: Verify that this works
+    fn goto_assignment_expression(&mut self, assignment_expression: &AssignmentExpression) {
+        let variable_identifier = &assignment_expression.token.span.literal;
+        self.goto_expression(&assignment_expression.expression);
+        self.frames.update(variable_identifier.clone(), self.last_value.unwrap());
+    }
+
     fn goto_block_statement(&mut self, block_statement: &ASTBlockStatement) {
         self.push_frame();
         for statement in &block_statement.statements {
@@ -122,6 +131,11 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
     fn goto_let_statement(&mut self, let_statement: &ASTLetStatement) {
         self.goto_expression(&let_statement.initializer);
         self.frames.insert(let_statement.identifier.span.literal.clone(), self.last_value.unwrap());
+    }
+
+
+    fn goto_boolean_expression(&mut self, boolean_expression: &BooleanExpression) {
+        self.last_value = Some(boolean_expression.value as i64);    
     }
 
     fn goto_variable_expression(&mut self, variable_expression: &VariableExpression) {
@@ -159,12 +173,12 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
             BinaryOperatorType::AND => left & right,
             BinaryOperatorType::OR => left | right,
             BinaryOperatorType::XOR => left ^ right,
-            BinaryOperatorType::GREATER => if left > right { 1 } else { 0 },
-            BinaryOperatorType::LESS => if left < right { 1 } else { 0 },
-            BinaryOperatorType::GREATEREQUALS => if left >= right { 1 } else { 0 },
-            BinaryOperatorType::LESSEQUALS => if left <= right { 1 } else { 0 },
             BinaryOperatorType::EQUALS => if left == right { 1 } else { 0 },
-            BinaryOperatorType::NOTEQUALS => if left != right { 1 } else { 0 },
+            BinaryOperatorType::GREATER => self.evaluate_boolean_instruction(|| left > right),
+            BinaryOperatorType::LESS => self.evaluate_boolean_instruction(|| left < right),
+            BinaryOperatorType::GREATEREQUALS => self.evaluate_boolean_instruction(|| left >= right),
+            BinaryOperatorType::LESSEQUALS => self.evaluate_boolean_instruction(|| left <= right),
+            BinaryOperatorType::NOTEQUALS => self.evaluate_boolean_instruction(|| left != right),
         });
     }
 

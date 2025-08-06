@@ -49,26 +49,26 @@ impl DiagnosticsVector {
     }
 
     pub fn report_unexpected_token(&mut self, expected: &TokenType, token: &Token) {
-        self.report_error(format!("Expected <{}>, found <{}>", expected, token.kind), token.span.clone());
+        self.report_error(format!("Expected \"{}\", found \"{}\" ", expected, token.kind), token.span.clone());
     }
     pub fn report_expected_expression(&mut self, token: &Token) {
-        self.report_error(format!("Expected expression, found <{}>", token.kind), token.span.clone());
+        self.report_error(format!("Expected expression, found \"{}\"", token.kind), token.span.clone());
     }
 
     pub fn report_undeclared_variable(&mut self, token: &Token) {
-        self.report_error(format!("Undeclared variable '{}'", token.span.literal), token.span.clone());
+        self.report_error(format!("Undeclared variable \"{}\"", token.span.literal), token.span.clone());
     }
 
     pub fn report_function_already_declared(&mut self, token: &Token) {
-        self.report_error(format!("Function '{}' was already declared", token.span.literal), token.span.clone());
+        self.report_error(format!("Function \"{}\" was already declared", token.span.literal), token.span.clone());
     }
 
     pub fn report_function_not_declared(&mut self, token: &Token) {
-        self.report_error(format!("Function '{}' was not declared", token.span.literal), token.span.clone());
+        self.report_error(format!("Function \"{}\" was not declared", token.span.literal), token.span.clone());
     }
 
     pub fn report_invalid_arguments(&mut self, token: &Token, expected: usize, found: usize) {
-        self.report_error(format!("Invalid arguments for function '{}', expected {} arguments, found {}", 
+        self.report_error(format!("Invalid arguments for function \"{}\", expected {} arguments, found {}", 
         token.span.literal, expected, found), token.span.clone());
     }
 
