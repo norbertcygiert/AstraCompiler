@@ -176,18 +176,8 @@ impl<'a> Lexer<'a> {
         return match c {
             '+' => TokenType::PLUS,
             '-' => TokenType::MINUS,
-            //Decide if this is a power operator or a multiplication operator
             '*' => {
-                if let Some(next) = self.current_char() {
-                    if next == '*' {
-                        self.consume_token();
-                        TokenType::POWER
-                    } 
-                    else { TokenType::ASTERISK }
-                    
-                } else {
-                    TokenType::ASTERISK
-                }
+                self.check_if_double_operator('*', TokenType::ASTERISK, TokenType::POWER)
             },
             '/' => TokenType::SLASH,
             '(' => TokenType::LEFTPAR,

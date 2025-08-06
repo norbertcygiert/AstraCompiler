@@ -39,9 +39,13 @@ impl ASTPrinter {
     fn add_string(&mut self, string: &str) {
         self.result.push_str(&format!("{}{}", Self::STRINGCOLOR.fg_str(), string));
     }
-
+    fn add_variable(&mut self, variable: &str) {
+        self.result.push_str(&format!("{}{}", Self::VARIABLE_COLOR.fg_str(), variable));
+    }
     
 }
+
+//TODO: Beautify the printed code (also make sure all the keywords are being printed like "while" etc.)
 
 impl ASTTraverser<'_> for ASTPrinter {
 
@@ -72,6 +76,15 @@ impl ASTTraverser<'_> for ASTPrinter {
     fn goto_statement(&mut self, statement: &ASTStatement) {
         Self::statement_dispatch(self, statement);
         self.result.push_str(&format!("{}\n", color::Fg(color::Reset) ));
+    }
+
+
+    fn goto_assignment_expression(&mut self, assignment_expression: &AssignmentExpression) {
+        self.add_variable(&assignment_expression.token.span.literal);
+        self.add_space();
+        self.add_string("=");
+        self.add_space();
+        self.goto_expression(&assignment_expression.expression);
     }
 
     fn goto_variable_expression(&mut self, variable_expression: &VariableExpression) {

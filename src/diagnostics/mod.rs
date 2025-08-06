@@ -178,7 +178,7 @@ mod test {
     fn should_report_invalid_token() {
         let input = "let a = 8 «@» 2";
         let expected = vec![
-            "Expected expression, found <INVALID>"
+            "Expected expression, found \"INVALID\""
         ];
 
         let verifier = DiagnosticsVerifier::new(input, expected);

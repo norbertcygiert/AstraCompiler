@@ -223,6 +223,18 @@ impl ASTTraverser<'_> for Resolver {
         self.scopes.exit_scope();
     }
     
+    fn goto_if_statement(&mut self, if_statement: &crate::syntax_tree::ASTIfStatement) {
+        self.scopes.enter_scope();
+        self.goto_expression(&if_statement.condition);
+        self.goto_statement(&if_statement.then_branch);
+        self.scopes.exit_scope();
+        if let Some(else_branch) = &if_statement.else_branch {
+            self.scopes.enter_scope();
+            self.goto_statement(&else_branch.else_statement);
+            self.scopes.exit_scope();
+        }
+    }
+
     fn goto_let_statement(&mut self, let_statement: &ASTLetStatement) {
         let identifier = let_statement.identifier.span.literal.clone();
         self.goto_expression(&let_statement.initializer);
