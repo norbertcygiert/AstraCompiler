@@ -5,8 +5,9 @@ mod diagnostics;
 mod code;
 mod compilation_unit;
 
-fn main() {
+fn main() -> Result<(), ()>{
     let input = code::source_code::read_sourcefile();
-    let compilation_unit = CompilationUnit::compile(&input);
-    compilation_unit.run_if_valid();
+    let compilation_unit = CompilationUnit::compile(&input).map_err(|_| ())?;
+    compilation_unit.run();
+    return Ok(());
 }

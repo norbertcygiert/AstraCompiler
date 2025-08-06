@@ -3,6 +3,8 @@ use std::cell::Cell;
 use crate::syntax_tree::{BinaryOperator, BinaryOperatorType, Expression, ASTStatement, UnaryOperator, UnaryOperatorType, lexer::{Token, TokenType}};
 use crate::diagnostics::DiagnosticsVectorCell;
 
+use super::{ASTElseStatement, FunctionParameter};
+
 pub struct CompileTimeCounter {
     value: Cell<usize>,
 }
@@ -52,18 +54,101 @@ impl Parser {
 
     fn parse_statement(&mut self) -> ASTStatement {
         match self.current_token().kind {
-            TokenType::LET => return self.parse_let_statement(),
-
+            TokenType::LET => {
+                return self.parse_let();
+            }
+            TokenType::IF => {
+                return self.parse_if();
+            }
+            TokenType::LEFTBRACE => {
+                return self.parse_block();
+            }
+            TokenType::WHILE => {
+                return self.parse_while();
+            }
+            TokenType::FUNC => {
+                return self.parse_function();
+            }
+            TokenType::RETURN => {
+                return self.parse_return();
+            }
             _ => return self.parse_expression_statement()
         }
     }
 
-    fn parse_let_statement(&mut self) -> ASTStatement {
+    fn parse_let(&mut self) -> ASTStatement {
         self.consume_with_check(TokenType::LET);
         let identifier = self.consume_with_check(TokenType::IDENTIFIER).clone();
         self.consume_with_check(TokenType::EQUALS);
         let expr = self.parse_expression();
         return ASTStatement::let_statement(identifier, expr);
+    }
+
+    fn parse_if(&mut self) -> ASTStatement {
+        let if_keyword = self.consume_with_check(TokenType::IF).clone();
+        let condition = self.parse_expression();
+        let then_block = self.parse_statement();
+        let else_block = self.parse_else();
+        return ASTStatement::if_statement(if_keyword, condition, then_block, else_block);
+    }
+    fn parse_else(&mut self) -> Option<ASTElseStatement> {
+        if self.current_token().kind == TokenType::ELSE {
+            let keyword = self.consume_with_check(TokenType::ELSE).clone();
+            let else_stmt = self.parse_statement();
+
+            return Some(ASTElseStatement::new(keyword, else_stmt));
+        }
+        return None;
+    }
+    fn parse_block(&mut self) -> ASTStatement{
+        self.consume_with_check(TokenType::LEFTBRACE);
+        let mut statements = Vec::new();
+        while self.current_token().kind != TokenType::RIGHTBRACE && !self.is_at_end() {
+            statements.push(self.parse_statement());
+        }
+        self.consume_with_check(TokenType::RIGHTBRACE);
+        return ASTStatement::block_statement(statements);
+    }
+
+    fn parse_while(&mut self) -> ASTStatement {
+        let while_keyword = self.consume_with_check(TokenType::WHILE).clone();
+        let condition = self.parse_expression();
+        let body = self.parse_statement();
+        return ASTStatement::while_statement(while_keyword, condition, body);
+    }
+    fn parse_parameters_list(&mut self) -> Vec<FunctionParameter> {
+        if self.current_token().kind != TokenType::LEFTPAR {
+            return Vec::new();
+        }
+
+        let mut parameters = Vec::new();
+        self.consume_with_check(TokenType::LEFTPAR);
+
+        while self.current_token().kind != TokenType::RIGHTPAR && !self.is_at_end() {
+            parameters.push(FunctionParameter {
+                identifier: self.consume_with_check(TokenType::IDENTIFIER).clone(),
+            });
+            if self.current_token().kind == TokenType::COMMA {
+                self.consume_with_check(TokenType::COMMA);
+            }
+        }
+        self.consume_with_check(TokenType::RIGHTPAR);
+        return parameters;
+    }
+    fn parse_function(&mut self) -> ASTStatement{
+        self.consume_with_check(TokenType::FUNC);
+        let identifier = self.consume_with_check(TokenType::IDENTIFIER).clone();
+        let parameters = self.parse_parameters_list();
+        let function_body = self.parse_statement();
+        
+        return ASTStatement::function(identifier, parameters, function_body);
+    }
+
+    //TODO: Allow returning void
+    fn parse_return(&mut self) -> ASTStatement {
+        let return_keyword = self.consume_with_check(TokenType::RETURN).clone();
+        let expression = self.parse_expression();
+        return ASTStatement::return_statement(return_keyword, Some(expression));
     }
 
     fn parse_expression_statement(&mut self) -> ASTStatement {

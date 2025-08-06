@@ -28,6 +28,7 @@ impl Diagnostic {
 
 pub type DiagnosticsVectorCell = Rc<RefCell<DiagnosticsVector>>;
 
+#[derive(Debug)]
 pub struct DiagnosticsVector {
     pub diagnostics: Vec<Diagnostic>,
 }
@@ -57,6 +58,20 @@ impl DiagnosticsVector {
     pub fn report_undeclared_variable(&mut self, token: &Token) {
         self.report_error(format!("Undeclared variable '{}'", token.span.literal), token.span.clone());
     }
+
+    pub fn report_function_already_declared(&mut self, token: &Token) {
+        self.report_error(format!("Function '{}' was already declared", token.span.literal), token.span.clone());
+    }
+
+    pub fn report_function_not_declared(&mut self, token: &Token) {
+        self.report_error(format!("Function '{}' was not declared", token.span.literal), token.span.clone());
+    }
+
+    pub fn report_invalid_arguments(&mut self, token: &Token, expected: usize, found: usize) {
+        self.report_error(format!("Invalid arguments for function '{}', expected {} arguments, found {}", 
+        token.span.literal, expected, found), token.span.clone());
+    }
+
 }
 
 #[cfg(test)]
@@ -72,7 +87,9 @@ mod test {
 
     impl DiagnosticsVerifier {
         pub fn new(input: &str, messages: Vec<&str>) -> Self {
+            let messages_length = messages.len();
             let expected = Self::parse_input(input, messages);
+            assert_eq!(expected.len(), messages_length, "Expected {} diagnostic messages, found {}", messages_length, expected.len());
             let actual = Self::compile(input);
             return Self { expected, actual };
         }
@@ -80,8 +97,14 @@ mod test {
         fn compile(input: &str) -> Vec<Diagnostic> {
             let raw = Self::get_raw_text(input);
             let compilation_unit = CompilationUnit::compile(&raw);
-            let diagnostics = compilation_unit.diagnostics_vector.borrow();
-            return diagnostics.diagnostics.clone();
+            return match compilation_unit {
+                Ok(_) => {
+                    vec![]
+                }
+                Err(e) => {
+                    e.borrow().diagnostics.clone()
+                }
+            }
         }
 
         fn get_raw_text(input: &str) -> String {
@@ -130,8 +153,7 @@ mod test {
     }
 
     #[test]
-    // Should report undeclared variable
-    fn test1() {
+    fn should_report_undeclared_variable() {
         let input = "let a = «b»";
         let expected = vec![
             "Undeclared variable 'b'"
@@ -142,8 +164,7 @@ mod test {
     }
 
     #[test]
-    // Should report expected expression
-    fn test2() {
+    fn should_report_expected_expression() {
         let input = "let a = «+»";
         let expected = vec![
             "Expected expression, found <+>"
@@ -154,8 +175,7 @@ mod test {
     }
 
     #[test]
-    // Should report invalid token
-    fn test3() {
+    fn should_report_invalid_token() {
         let input = "let a = 8 «@» 2";
         let expected = vec![
             "Expected expression, found <INVALID>"

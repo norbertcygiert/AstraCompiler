@@ -9,6 +9,13 @@ pub enum TokenType {
     ASTERISK,
     SLASH,
     EQUALS,
+    COMPARISON,
+    NOTEQUALS, //These are inspired by x86 conditional jump instructions names
+    GREATEREQUALS, 
+    LESSEQUALS,
+    GREATER,
+    LESS,
+    // BITWISE
     AMPERSAND,
     PIPE,
     CARET,
@@ -16,9 +23,20 @@ pub enum TokenType {
     NOT,
     // KEYWORDS
     LET,
+    IF,
+    ELSE,
+    TRUE,
+    FALSE,
+    WHILE,
+    FUNC,
+    RETURN,
     // OTHER
     LEFTPAR,
     RIGHTPAR,
+    LEFTBRACE,
+    RIGHTBRACE,
+    COMMA,
+    SEMICOLON,
     WHITESPACE,
     IDENTIFIER,
     EOF,
@@ -29,26 +47,45 @@ impl Display for TokenType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TokenType::NUMERAL(_) => write!(f, "NUMERAL"),
-
+            // OPERATORS
             TokenType::PLUS => write!(f, "+"),
             TokenType::MINUS => write!(f, "-"),
             TokenType::ASTERISK => write!(f, "*"),
             TokenType::SLASH => write!(f, "/"),
             TokenType::EQUALS => write!(f, "="),
+            TokenType::COMPARISON => write!(f, "=="),
+            TokenType::NOTEQUALS => write!(f, "!="),
+            TokenType::GREATEREQUALS => write!(f, ">="),
+            TokenType::LESSEQUALS => write!(f, "<="),  
+            TokenType::GREATER => write!(f, ">"),
+            TokenType::LESS => write!(f, "<"),
+            // BITWISE
             TokenType::AMPERSAND => write!(f, "&"),
             TokenType::PIPE => write!(f, "|"),
             TokenType::CARET => write!(f, "^"),
             TokenType::POWER => write!(f, "**"),
             TokenType::NOT => write!(f, "~"),
-
+            // KEYWORDS
             TokenType::LET => write!(f, "LET"),
+            TokenType::IF => write!(f, "IF"),
+            TokenType::ELSE => write!(f, "ELSE"),
+            TokenType::TRUE => write!(f, "TRUE"),
+            TokenType::FALSE =>write!(f, "FALSE"),
+            TokenType::WHILE =>write!(f, "WHILE"),
+            TokenType::FUNC => write!(f, "FUNC"),
+            TokenType::RETURN => write!(f, "RETURN"),
 
             TokenType::LEFTPAR => write!(f, "("),
             TokenType::RIGHTPAR => write!(f, ")"),
+            TokenType::LEFTBRACE => write!(f, "{{"),
+            TokenType::RIGHTBRACE => write!(f, "}}"),
+            TokenType::COMMA => write!(f, "COMMA"),
+            TokenType::SEMICOLON => write!(f, "SEMICOLON"),
             TokenType::WHITESPACE => write!(f, "WHITESPACE"),
             TokenType::IDENTIFIER => write!(f, "IDENTIFIER"),
             TokenType::EOF => write!(f, "EOF"),
             TokenType::INVALID => write!(f, "INVALID"),
+
         }
     }
 }
@@ -114,6 +151,13 @@ impl<'a> Lexer<'a> {
                 let identifier = self.consume_identifier();
                 kind = match identifier.as_str() {
                     "let" | "var" => TokenType::LET,
+                    "if" => TokenType::IF,
+                    "else" => TokenType::ELSE,
+                    "true" => TokenType::TRUE,
+                    "false" => TokenType::FALSE,
+                    "while" => TokenType::WHILE,
+                    "func" => TokenType::FUNC,
+                    "return" => TokenType::RETURN,
                     _ => TokenType::IDENTIFIER,
                 }
 
@@ -148,7 +192,16 @@ impl<'a> Lexer<'a> {
             '/' => TokenType::SLASH,
             '(' => TokenType::LEFTPAR,
             ')' => TokenType::RIGHTPAR,
-            '=' => TokenType::EQUALS,
+            '{' => TokenType::LEFTBRACE,
+            '}' => TokenType::RIGHTBRACE,
+            ',' => TokenType::COMMA,
+            ';' => TokenType::SEMICOLON,
+            '=' => {
+                self.check_if_double_operator('=', TokenType::EQUALS, TokenType::COMPARISON)
+            },
+            '!' => {
+                self.check_if_double_operator('=', TokenType::INVALID, TokenType::NOTEQUALS)
+            },
             '&' => TokenType::AMPERSAND,
             '|' => TokenType::PIPE,
             '^' => TokenType::CARET,
@@ -192,6 +245,19 @@ impl<'a> Lexer<'a> {
         self.current_pos += 1;
 
         return c;
+    }
+
+    //TODO: Verify that this function works correctly
+    fn check_if_double_operator(&mut self, expected: char, current_op: TokenType, potential_op: TokenType) -> TokenType {
+        if let Some(next) = self.current_char() {
+            if next == expected {
+                self.consume_token();
+                return potential_op;
+            } else {
+                return current_op;
+            }
+        }
+        return current_op;
     }
 
     fn is_number_start(c: &char) -> bool { return c.is_digit(10); }

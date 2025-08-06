@@ -1,26 +1,97 @@
 use std::collections::HashMap;
-use crate::syntax_tree::{BinaryExpression, BinaryOperatorType, ASTLetStatement, NumberExpression, ParenthesizedExpression, UnaryExpression, UnaryOperatorType, VariableExpression, ASTTraverser};
-use crate::syntax_tree::lexer::SourceCodeSpan;
+use crate::compilation_unit::GlobalScope;
+use crate::syntax_tree::*;
 
-pub struct ASTEvaluator {
-    pub last_value: Option<i64>,
-    pub variables: HashMap<String, i64>,
+
+pub struct Frame {
+    variables: HashMap<String, i64>,
 }
 
-impl ASTEvaluator {
+impl Frame {
     pub fn new() -> Self {
-        Self { last_value: None, variables: HashMap::new() }
+        Self { variables: HashMap::new() }
+    }
+
+    pub fn get(&self, name: &str) -> Option<&i64> {
+        return self.variables.get(name);
+    }
+
+    pub fn insert(&mut self, name: String, value: i64) {
+        self.variables.insert(name, value);
     }
 }
 
-impl ASTTraverser for ASTEvaluator {
+pub struct FramesVector {
+    frames: Vec<Frame>,
+}
+
+impl FramesVector {
+    fn new() -> Self {
+        Self { frames: vec![Frame::new()] }
+    }
+
+    fn push(&mut self) {
+        self.frames.push(Frame::new());
+    }
+
+    fn pop(&mut self) -> Option<Frame> {
+        return self.frames.pop();
+    }
+
+    fn get(&self, name: &str) -> Option<&i64> {
+        for frame in self.frames.iter().rev() {
+            if let Some(value) = frame.get(name) {
+                return Some(value);
+            }
+        }
+        None
+    }
+
+    fn insert(&mut self, indentifier: String, value: i64) {
+        self.frames.last_mut().unwrap().insert(indentifier, value);
+    }
+
+    fn update(&mut self, indentifier: String, value: i64) {
+        for frame in self.frames.iter_mut().rev() {
+            if frame.get(&indentifier).is_some() {
+                frame.insert(indentifier, value);
+                return;
+            }
+        }
+        panic!("Variable {} not found", indentifier);
+    }
+}
+
+
+pub struct ASTEvaluator<'a> {
+    pub last_value: Option<i64>,
+    pub frames: FramesVector,
+    pub global_scope: &'a GlobalScope,
+}
+
+impl <'a> ASTEvaluator <'a>{
+    pub fn new(global_scope: &'a GlobalScope) -> Self {
+        Self { last_value: None, frames: FramesVector::new(), global_scope }
+    }
+    fn evaluate_boolean_instruction<F>(&mut self, instruction: F) -> bool where F: FnOnce() -> bool {
+        return instruction(); //TODO: Verify that this works
+    }
+
+    fn push_frame(&mut self) {
+        self.frames.push();
+    }
+    fn pop_frame(&mut self) {
+        self.frames.pop();
+    }
+}
+impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
     fn goto_let_statement(&mut self, let_statement: &ASTLetStatement) {
         self.goto_expression(&let_statement.initializer);
-        self.variables.insert(let_statement.identifier.span.literal.clone(), self.last_value.unwrap());
+        self.frames.insert(let_statement.identifier.span.literal.clone(), self.last_value.unwrap());
     }
 
     fn goto_variable_expression(&mut self, variable_expression: &VariableExpression) {
-        self.last_value = Some(*self.variables.get(&variable_expression.identifier.span.literal).unwrap());
+        self.last_value = Some(*self.frames.get(&variable_expression.identifier.span.literal).unwrap());
     }
 
     fn goto_number_expression(&mut self, number: &NumberExpression) {
@@ -28,7 +99,7 @@ impl ASTTraverser for ASTEvaluator {
     }
 
     fn goto_error(&mut self, span: &SourceCodeSpan) {
-        // TODO
+        todo!();
     }
 
     fn goto_unary_expression(&mut self, unary_expression: &UnaryExpression) {
@@ -54,6 +125,7 @@ impl ASTTraverser for ASTEvaluator {
             BinaryOperatorType::AND => left & right,
             BinaryOperatorType::OR => left | right,
             BinaryOperatorType::XOR => left ^ right,
+            _ => panic!("Astra Compiler: Evaluator -> Unsupported binary operator: {:?}", expr.operator.kind),
         });
     }
 
