@@ -291,7 +291,7 @@ impl Expression {
         return Expression::new(ExpressionType::BOOLEAN(BooleanExpression { token, value }));
     }
 
-    pub fn function_call(identifier: Token, arguments: Vec<Expression>) -> Self {
+    pub fn function_call(token: Token, arguments: Vec<Expression>) -> Self {
         return Expression::new(ExpressionType::FUNCTIONCALL(FunctionCallExpression { token, arguments }));
     }
 

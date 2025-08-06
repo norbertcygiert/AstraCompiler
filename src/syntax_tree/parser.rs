@@ -151,13 +151,26 @@ impl Parser {
         return ASTStatement::return_statement(return_keyword, Some(expression));
     }
 
+    //Expression as a statement
     fn parse_expression_statement(&mut self) -> ASTStatement {
         let expr = self.parse_expression();
         return ASTStatement::expression(expr);
     }
 
     fn parse_expression(&mut self) -> Expression {
-        return self.parse_binary_expression(0);
+        return self.parse_assignment_expression();
+    }
+
+    fn parse_assignment_expression(&mut self) -> Expression {
+        if self.current_token().kind == TokenType::IDENTIFIER && self.peek(1).kind == TokenType::EQUALS { 
+            let identifier = self.consume_with_check(TokenType::IDENTIFIER).clone();
+            self.consume_with_check(TokenType::EQUALS); 
+            let expression = self.parse_expression(); // Parse the right side expression and assign it to the variable on the left of equal sign
+            return Expression::assignment(identifier, expression);
+        }
+        else {
+            return self.parse_binary_expression(0);
+        }
     }
 
     fn parse_binary_expression(&mut self, precedence: u8) -> Expression {
