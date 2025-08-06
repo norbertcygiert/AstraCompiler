@@ -245,7 +245,7 @@ pub struct AssignmentExpression {
 }
 #[derive(Debug, Clone)]
 pub struct FunctionCallExpression {
-    pub identifier: Token,
+    pub token: Token,
     pub arguments: Vec<Expression>,
 }
 #[derive(Debug, Clone)]
@@ -292,7 +292,7 @@ impl Expression {
     }
 
     pub fn function_call(identifier: Token, arguments: Vec<Expression>) -> Self {
-        return Expression::new(ExpressionType::FUNCTIONCALL(FunctionCallExpression { identifier, arguments }));
+        return Expression::new(ExpressionType::FUNCTIONCALL(FunctionCallExpression { token, arguments }));
     }
 
     pub fn error(span: SourceCodeSpan) -> Self {

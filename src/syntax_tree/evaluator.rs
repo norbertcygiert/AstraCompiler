@@ -112,14 +112,7 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
         }
         self.pop_frame();
     }
-
-    // IMPORTANT: Verify that this works
-    fn goto_assignment_expression(&mut self, assignment_expression: &AssignmentExpression) {
-        let variable_identifier = &assignment_expression.token.span.literal;
-        self.goto_expression(&assignment_expression.expression);
-        self.frames.update(variable_identifier.clone(), self.last_value.unwrap());
-    }
-
+    
     fn goto_block_statement(&mut self, block_statement: &ASTBlockStatement) {
         self.push_frame();
         for statement in &block_statement.statements {
@@ -127,12 +120,18 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
         }
         self.pop_frame();
     }
-
+    
     fn goto_let_statement(&mut self, let_statement: &ASTLetStatement) {
         self.goto_expression(&let_statement.initializer);
         self.frames.insert(let_statement.identifier.span.literal.clone(), self.last_value.unwrap());
     }
-
+    
+    // IMPORTANT: Verify that this works
+    fn goto_assignment_expression(&mut self, assignment_expression: &AssignmentExpression) {
+        let variable_identifier = &assignment_expression.token.span.literal;
+        self.goto_expression(&assignment_expression.expression);
+        self.frames.update(variable_identifier.clone(), self.last_value.unwrap());
+    }
 
     fn goto_boolean_expression(&mut self, boolean_expression: &BooleanExpression) {
         self.last_value = Some(boolean_expression.value as i64);    

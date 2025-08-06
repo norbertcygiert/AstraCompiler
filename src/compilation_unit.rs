@@ -193,12 +193,12 @@ impl ASTTraverser<'_> for Resolver {
     }
 
     fn goto_function_call_expression(&mut self, function_call_expression: &crate::syntax_tree::FunctionCallExpression) {
-        let function = self.scopes.lookup_function(&function_call_expression.identifier.span.literal);
+        let function = self.scopes.lookup_function(&function_call_expression.token.span.literal);
         match function {
             Some(func) => {
                 if func.parameters.len() != function_call_expression.arguments.len() {
                     self.diagnostics.borrow_mut().report_invalid_arguments(
-                        &function_call_expression.identifier,
+                        &function_call_expression.token,
                         func.parameters.len(),
                         function_call_expression.arguments.len(),
                     );
@@ -206,7 +206,7 @@ impl ASTTraverser<'_> for Resolver {
             }
             None => {
                 self.diagnostics.borrow_mut().report_function_not_declared(
-                    &function_call_expression.identifier,
+                    &function_call_expression.token,
                 );
             }
         }
@@ -264,6 +264,7 @@ impl CompilationUnit {
         while let Some(token) = lexer.next_token() {
             tokens.push(token);
         }
+        print!("Tokens: {:#?}\n", tokens);
         let diagnostics_bag: DiagnosticsVectorCell = Rc::new(RefCell::new(DiagnosticsVector::new()));
         let mut ast: AbstractSyntaxTree = AbstractSyntaxTree::new();
         let mut parser = Parser::new(
