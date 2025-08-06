@@ -98,7 +98,7 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
         self.pop_frame();
     }
 
-    fn goto_if_statement(&mut self, if_statement: &ASTIFStatement) {
+    fn goto_if_statement(&mut self, if_statement: &ASTIfStatement) {
         self.push_frame();
         self.goto_expression(&if_statement.condition);
         if self.last_value.unwrap() != 0 {
@@ -139,7 +139,8 @@ impl <'a> ASTTraverser<'_> for ASTEvaluator<'a> {
     }
 
     fn goto_variable_expression(&mut self, variable_expression: &VariableExpression) {
-        self.last_value = Some(*self.frames.get(&variable_expression.identifier.span.literal).unwrap());
+        let id = variable_expression.identifier.span.literal.clone();
+        self.last_value = Some(*self.frames.get(&id).expect(format!("Variable {} not found", id).as_str()));
     }
 
     fn goto_number_expression(&mut self, number: &NumberExpression) {

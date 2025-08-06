@@ -15,7 +15,7 @@ impl ASTPrinter {
     const STRINGCOLOR: color::LightCyan = color::LightCyan;
 
     pub fn new() -> Self {
-        Self { indent: 0, result: String::new() }
+        Self { indent: 2, result: String::new() }
     }
 
     fn add_space(&mut self) { self.result.push_str(" "); }
@@ -24,8 +24,12 @@ impl ASTPrinter {
 
     fn add_indent(&mut self) {
         for _ in 0..self.indent {
-            self.result.push_str("  ");
+            self.result.push_str(" ");
         }
+    }
+
+    fn add_keyword(&mut self, keyword: &str) {
+        self.result.push_str(&format!("{}{}", Self::KEYWORD_COLOR.fg_str(), keyword));
     }
 
     fn add_boolean(&mut self, boolean: bool) {
@@ -40,10 +44,25 @@ impl ASTPrinter {
 }
 
 impl ASTTraverser<'_> for ASTPrinter {
+
+    fn goto_if_statement(&mut self, if_statement: &ASTIfStatement) {
+        self.add_keyword("if");
+        self.add_space();
+        self.goto_expression(&if_statement.condition);
+        self.add_newline();
+        self.add_indent();
+        self.goto_statement(&if_statement.then_branch);
+        if let Some(else_branch) = &if_statement.else_branch {
+            self.add_keyword("else");
+            self.add_space();
+            self.goto_statement(&else_branch.else_statement);
+        }
+    }
+
     fn goto_let_statement(&mut self, let_statement: &ASTLetStatement) {
         self.result.push_str(&format!("{}let", Self::KEYWORD_COLOR.fg_str()));
         self.add_space();
-        self.result.push_str(&format!("{}{}", Self::TEXT_COLOR.fg_str(), let_statement.identifier.span.literal, ));
+        self.result.push_str(&format!("{}{}", Self::TEXT_COLOR.fg_str(), let_statement.identifier.span.literal));
         self.add_space();
         self.result.push_str(&format!("{}=", Self::TEXT_COLOR.fg_str(), ));
         self.add_space();

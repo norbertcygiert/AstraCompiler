@@ -85,7 +85,7 @@ pub trait ASTTraverser<'a> {
     
     fn goto_let_statement(&mut self, let_statement: &ASTLetStatement);
     
-    fn goto_if_statement(&mut self, if_statement: &ASTIFStatement) {
+    fn goto_if_statement(&mut self, if_statement: &ASTIfStatement) {
         self.goto_expression(&if_statement.condition);
         self.goto_statement(&if_statement.then_branch);
         if let Some(else_branch) = &if_statement.else_branch {

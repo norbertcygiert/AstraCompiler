@@ -202,6 +202,12 @@ impl<'a> Lexer<'a> {
             '!' => {
                 self.check_if_double_operator('=', TokenType::INVALID, TokenType::NOTEQUALS)
             },
+            '>' => {
+                self.check_if_double_operator('=', TokenType::GREATER, TokenType::GREATEREQUALS)
+            },
+            '<' => {
+                self.check_if_double_operator('=', TokenType::LESS, TokenType::LESSEQUALS)
+            },
             '&' => TokenType::AMPERSAND,
             '|' => TokenType::PIPE,
             '^' => TokenType::CARET,

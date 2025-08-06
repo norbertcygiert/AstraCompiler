@@ -207,6 +207,12 @@ impl Parser {
             TokenType::PIPE => Some(BinaryOperatorType::OR),
             TokenType::CARET => Some(BinaryOperatorType::XOR),
             TokenType::POWER => Some(BinaryOperatorType::POWER),
+            TokenType::EQUALS => Some(BinaryOperatorType::EQUALS),
+            TokenType::GREATEREQUALS => Some(BinaryOperatorType::GREATEREQUALS),
+            TokenType::LESSEQUALS => Some(BinaryOperatorType::LESSEQUALS),
+            TokenType::GREATER => Some(BinaryOperatorType::GREATER),
+            TokenType::LESS => Some(BinaryOperatorType::LESS),
+            TokenType::NOTEQUALS => Some(BinaryOperatorType::NOTEQUALS),
             _ => None 
         };
         return kind.map(|kind| BinaryOperator::new(kind, token.clone()));

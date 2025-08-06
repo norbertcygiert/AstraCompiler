@@ -1,5 +1,3 @@
-
-
 use crate::syntax_tree::lexer::{SourceCodeSpan, Token};
 use printer::ASTPrinter;
 use traverser::ASTTraverser;
@@ -36,14 +34,11 @@ impl AbstractSyntaxTree {
 }
 
 
-
-
-
 #[derive(Debug, Clone)]
 pub enum ASTStatementType {
     EXPRESSION(Expression),
     LET(ASTLetStatement),
-    IF(ASTIFStatement),
+    IF(ASTIfStatement),
     WHILE(ASTWhileStatement),
     BLOCK(ASTBlockStatement),
     FUNCTION(ASTFunctionStatement),
@@ -57,7 +52,7 @@ pub struct ASTLetStatement {
 }
 
 #[derive(Debug, Clone)]
-pub struct ASTIFStatement {
+pub struct ASTIfStatement {
     pub if_keyword: Token,
     pub condition: Expression,
     pub then_branch: Box<ASTStatement>,
@@ -95,7 +90,6 @@ pub struct ASTReturnStatement {
     pub return_value: Option<Expression>,
 }
 
-
 impl ASTElseStatement {
     pub fn new(else_keyword: Token, else_statement: ASTStatement) -> Self {
         Self { else_keyword, else_statement: Box::new(else_statement) }
@@ -120,7 +114,7 @@ impl ASTStatement {
     }
 
     pub fn if_statement(if_keyword: Token, condition: Expression, then_branch: ASTStatement, else_branch: Option<ASTElseStatement>) -> Self {
-        return ASTStatement::new(ASTStatementType::IF(ASTIFStatement { if_keyword, condition, then_branch: Box::new(then_branch), else_branch }));
+        return ASTStatement::new(ASTStatementType::IF(ASTIfStatement { if_keyword, condition, then_branch: Box::new(then_branch), else_branch }));
     }
     
     pub fn while_statement(while_keyword: Token, condition: Expression, body: ASTStatement) -> Self {
@@ -139,6 +133,7 @@ impl ASTStatement {
         return ASTStatement::new(ASTStatementType::RETURN(ASTReturnStatement { return_keyword, return_value }));
     }
 }
+
 #[derive(Debug, Clone)]
 pub enum ExpressionType {
     NUMBER( NumberExpression ),
@@ -146,7 +141,7 @@ pub enum ExpressionType {
     UNARY( UnaryExpression ),
     PARENTHESIZED( ParenthesizedExpression ),
     VARIABLE( VariableExpression ),
-    ASSIGNMENT( AssignmentExpression),
+    ASSIGNMENT( AssignmentExpression ),
     FUNCTIONCALL( FunctionCallExpression ),
     BOOLEAN( BooleanExpression ),
     ERROR( SourceCodeSpan ),
@@ -253,13 +248,11 @@ pub struct FunctionCallExpression {
     pub identifier: Token,
     pub arguments: Vec<Expression>,
 }
-
 #[derive(Debug, Clone)]
 pub struct BooleanExpression {
     pub token: Token,
     pub value: bool,
 }
-
 #[derive(Debug, Clone)]
 pub struct Expression {
     kind: ExpressionType,
@@ -382,7 +375,7 @@ mod test {
                 self.goto_expression(return_value);
             }
         }
-        fn goto_if_statement(&mut self, if_statement: &super::ASTIFStatement) {
+        fn goto_if_statement(&mut self, if_statement: &super::ASTIfStatement) {
             self.actual.push(TestASTNode::IF);
             self.goto_expression(&if_statement.condition);
             self.goto_statement(&if_statement.then_branch);
